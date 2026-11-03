@@ -1,0 +1,51 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Event {
+  id           String      @id @default(cuid())
+  title        String
+  description  String
+  category     String
+  image        String
+  location     String
+  eventDate    DateTime
+  creatorId    String
+  creatorName  String
+  creatorEmail String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  joins        EventJoin[]
+
+  @@index([eventDate])
+  @@index([creatorEmail])
+}
+
+model EventJoin {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  userName  String
+  userEmail String
+  joinedAt  DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userEmail])
+  @@index([userEmail])
+}

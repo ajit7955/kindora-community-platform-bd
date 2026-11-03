@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --bg: #f7faf8; --fg: #10231c; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--fg); }
+.dark body { --bg: #07130f; --fg: #e8f5ef; background: var(--bg); color: var(--fg); }
+* { box-sizing: border-box; }
+.container-x { width: min(1180px, calc(100% - 40px)); margin-inline: auto; }
+.glass { background: rgba(255,255,255,.76); backdrop-filter: blur(14px); }
+.dark .glass { background: rgba(12,29,22,.78); }
+.gradient-text { background: linear-gradient(90deg,#059669,#84cc16); -webkit-background-clip:text; color:transparent; }
+.btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:999px; background:#059669; color:white; padding:.85rem 1.25rem; font-weight:700; transition:.2s; }
+.btn-primary:hover { background:#047857; transform:translateY(-1px); }
+.btn-secondary { border:1px solid #cbd5e1; border-radius:999px; padding:.8rem 1.15rem; font-weight:600; }
+.dark .btn-secondary { border-color:#334155; }
+.card { border:1px solid rgba(148,163,184,.2); border-radius:24px; overflow:hidden; background:white; box-shadow:0 12px 40px rgba(15,23,42,.05); }
+.dark .card { background:#102019; }

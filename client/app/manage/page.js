@@ -1,0 +1,5 @@
+"use client";
+import {useEffect,useState} from "react";import {api} from "@/lib/api";import toast from "react-hot-toast";
+export default function Manage(){const [events,setEvents]=useState([]);useEffect(()=>{api("/my-events").then(setEvents).catch(e=>toast.error(e.message))},[]);
+async function del(id){if(!confirm("Delete this event?"))return;try{await api(`/events/${id}`,{method:"DELETE"});setEvents(v=>v.filter(e=>e.id!==id));toast.success("Event deleted")}catch(e){toast.error(e.message)}}
+return <div className="container-x py-14"><h1 className="text-4xl font-black">Manage your events</h1><div className="mt-8 grid gap-4">{events.map(e=><div key={e.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-5 dark:border-slate-800"><div><h2 className="font-bold">{e.title}</h2><p className="text-sm text-slate-500">{new Date(e.eventDate).toLocaleDateString()} · {e.location}</p></div><button onClick={()=>del(e.id)} className="rounded-full bg-rose-50 px-4 py-2 font-bold text-rose-600">Delete</button></div>)}</div>{!events.length&&<p className="mt-8 text-slate-500">No events found. Create your first event.</p>}</div>}

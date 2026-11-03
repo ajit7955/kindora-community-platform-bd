@@ -1,0 +1,3 @@
+"use client";
+import {useEffect,useState} from "react";import {api} from "@/lib/api";import {EventCard} from "@/components/event-card";import toast from "react-hot-toast";
+export default function Joined(){const [events,setEvents]=useState([]);useEffect(()=>{api("/joined-events").then(setEvents).catch(e=>toast.error(e.message))},[]);return <div className="container-x py-14"><h1 className="text-4xl font-black">Events you joined</h1><p className="mt-3 text-slate-500">Your calendar of community impact.</p><div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{events.map(e=><EventCard key={e.id} event={e}/>)}</div>{!events.length&&<p className="mt-8 text-slate-500">You have not joined any events yet.</p>}</div>}

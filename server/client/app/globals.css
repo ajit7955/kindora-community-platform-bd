@@ -1,0 +1,245 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   KINDORA GLOBAL DESIGN
+========================================= */
+
+:root {
+  --kindora-green: #059669;
+  --kindora-dark: #052e24;
+  --kindora-light: #ecfdf5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: #0f172a;
+  overflow-x: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* =========================================
+   CONTAINER
+========================================= */
+
+.container-x {
+  width: 100%;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+/* =========================================
+   PRIMARY BUTTON
+========================================= */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 9999px;
+  background: #059669;
+  color: #ffffff;
+  padding: 13px 26px;
+  font-weight: 800;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: #047857;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(5, 150, 105, 0.2);
+}
+
+/* =========================================
+   KINDORA HOMEPAGE
+========================================= */
+
+.kindora-home {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.kindora-home section {
+  position: relative;
+  scroll-margin-top: 90px;
+}
+
+.kindora-home h1,
+.kindora-home h2,
+.kindora-home h3 {
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: -0.04em;
+}
+
+.kindora-home p {
+  text-wrap: pretty;
+}
+
+.kindora-home img {
+  display: block;
+  max-width: 100%;
+}
+
+.kindora-home a,
+.kindora-home button {
+  transition: all 0.3s ease;
+}
+
+/* =========================================
+   HERO SECTION
+========================================= */
+
+.kindora-home #top {
+  min-height: 650px;
+}
+
+.kindora-home #top h1 {
+  font-weight: 900;
+  letter-spacing: -0.065em;
+}
+
+.kindora-home #top img {
+  object-position: center;
+}
+
+/* =========================================
+   CARD HOVER EFFECT
+========================================= */
+
+.kindora-home article,
+.kindora-home .group {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* =========================================
+   IMAGE DISPLAY
+========================================= */
+
+.kindora-home img {
+  background-color: #e2e8f0;
+}
+
+.kindora-home img[src=""] {
+  visibility: hidden;
+}
+
+/* =========================================
+   SCROLL EXPERIENCE
+========================================= */
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  overflow-y: auto;
+}
+
+.kindora-home {
+  min-height: 100vh;
+}
+
+/* =========================================
+   TEXT SELECTION
+========================================= */
+
+.kindora-home ::selection {
+  background: #a7f3d0;
+  color: #064e3b;
+}
+
+/* =========================================
+   MOBILE RESPONSIVE
+========================================= */
+
+@media (max-width: 768px) {
+  .container-x {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .kindora-home #top {
+    min-height: auto;
+  }
+
+  .kindora-home #top img {
+    height: 420px;
+  }
+}
+
+@media (max-width: 640px) {
+  html {
+    scroll-padding-top: 70px;
+  }
+
+  .container-x {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .kindora-home section {
+    scroll-margin-top: 70px;
+  }
+
+  .kindora-home #top img {
+    height: 390px;
+  }
+
+  .kindora-home h1 {
+    word-break: normal;
+  }
+
+  .kindora-home h2 {
+    line-height: 1.15;
+  }
+
+  .kindora-home .btn-primary {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
+
+/* =========================================
+   LARGE SCREEN
+========================================= */
+
+@media (min-width: 1600px) {
+  .container-x {
+    max-width: 1500px;
+  }
+}
