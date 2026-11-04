@@ -22,10 +22,12 @@ const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:3000")
   .split(",")
   .map((origin) => origin.trim());
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: "1mb" }));
 
@@ -34,12 +36,21 @@ app.use(express.json({ limit: "1mb" }));
 const signupSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: z.string().trim().email().max(150),
-  password: z.string().min(8).max(100)
+  password: z.string().min(8).max(100),
 });
 
 const loginSchema = z.object({
   email: z.string().trim().email(),
-  password: z.string().min(1)
+  password: z.string().min(1),
+});
+
+const profileSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  image: z.union([
+    z.string().url().max(2000),
+    z.literal(""),
+    z.null(),
+  ]).optional(),
 });
 
 const eventSchema = z.object({
@@ -53,7 +64,7 @@ const eventSchema = z.object({
       !Number.isNaN(Date.parse(value)) &&
       new Date(value) > new Date(),
     "Event date must be in the future."
-  )
+  ),
 });
 
 // ==================== HEALTH ====================
@@ -61,7 +72,7 @@ const eventSchema = z.object({
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
-    service: "Kindora API"
+    service: "Kindora API",
   });
 });
 
@@ -71,16 +82,15 @@ app.get("/api/health", (_req, res) => {
 app.post("/api/auth/signup", async (req, res, next) => {
   try {
     const data = signupSchema.parse(req.body);
-
     const email = data.email.toLowerCase();
 
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (existingUser) {
       return res.status(409).json({
-        message: "An account with this email already exists."
+        message: "An account with this email already exists.",
       });
     }
 
@@ -90,21 +100,22 @@ app.post("/api/auth/signup", async (req, res, next) => {
       data: {
         name: data.name,
         email,
-        passwordHash
+        passwordHash,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        createdAt: true
-      }
+        image: true,
+        createdAt: true,
+      },
     });
 
     const token = jwt.sign(
       {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
       },
       JWT_SECRET,
       { expiresIn: "7d" }
@@ -113,7 +124,7 @@ app.post("/api/auth/signup", async (req, res, next) => {
     res.status(201).json({
       message: "Account created successfully.",
       token,
-      user
+      user,
     });
   } catch (error) {
     next(error);
@@ -124,16 +135,15 @@ app.post("/api/auth/signup", async (req, res, next) => {
 app.post("/api/auth/login", async (req, res, next) => {
   try {
     const data = loginSchema.parse(req.body);
-
     const email = data.email.toLowerCase();
 
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (!user) {
       return res.status(401).json({
-        message: "Invalid email or password."
+        message: "Invalid email or password.",
       });
     }
 
@@ -144,7 +154,7 @@ app.post("/api/auth/login", async (req, res, next) => {
 
     if (!passwordMatches) {
       return res.status(401).json({
-        message: "Invalid email or password."
+        message: "Invalid email or password.",
       });
     }
 
@@ -152,7 +162,7 @@ app.post("/api/auth/login", async (req, res, next) => {
       {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
       },
       JWT_SECRET,
       { expiresIn: "7d" }
@@ -164,8 +174,9 @@ app.post("/api/auth/login", async (req, res, next) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+        image: user.image,
+      },
     });
   } catch (error) {
     next(error);
@@ -181,17 +192,60 @@ app.get("/api/auth/me", requireAuth, async (req, res, next) => {
         id: true,
         name: true,
         email: true,
-        createdAt: true
-      }
+        image: true,
+        createdAt: true,
+      },
     });
 
     if (!user) {
       return res.status(404).json({
-        message: "User not found."
+        message: "User not found.",
       });
     }
 
     res.json({ user });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// UPDATE PROFILE
+app.patch("/api/auth/me", requireAuth, async (req, res, next) => {
+  try {
+    const data = profileSchema.parse(req.body);
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        name: data.name,
+        ...(data.image !== undefined
+          ? { image: data.image || null }
+          : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        createdAt: true,
+      },
+    });
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Profile updated successfully.",
+      token,
+      user,
+    });
   } catch (error) {
     next(error);
   }
@@ -210,10 +264,10 @@ app.get("/api/events", async (req, res, next) => {
 
     const events = await prisma.event.findMany({
       where: {
-        eventDate: { gt: new Date() }
+        eventDate: { gt: new Date() },
       },
       orderBy: { eventDate: "asc" },
-      ...(limit ? { take: limit } : {})
+      ...(limit ? { take: limit } : {}),
     });
 
     res.json(events);
@@ -229,14 +283,14 @@ app.get("/api/events/:id", async (req, res, next) => {
       where: { id: req.params.id },
       include: {
         _count: {
-          select: { joins: true }
-        }
-      }
+          select: { joins: true },
+        },
+      },
     });
 
     if (!event) {
       return res.status(404).json({
-        message: "Event not found."
+        message: "Event not found.",
       });
     }
 
@@ -257,8 +311,8 @@ app.post("/api/events", requireAuth, async (req, res, next) => {
         eventDate: new Date(data.eventDate),
         creatorId: req.user.id,
         creatorName: req.user.name,
-        creatorEmail: req.user.email
-      }
+        creatorEmail: req.user.email,
+      },
     });
 
     res.status(201).json(event);
@@ -272,9 +326,9 @@ app.get("/api/my-events", requireAuth, async (req, res, next) => {
   try {
     const events = await prisma.event.findMany({
       where: {
-        creatorId: req.user.id
+        creatorId: req.user.id,
       },
-      orderBy: { eventDate: "asc" }
+      orderBy: { eventDate: "asc" },
     });
 
     res.json(events);
@@ -287,18 +341,18 @@ app.get("/api/my-events", requireAuth, async (req, res, next) => {
 app.patch("/api/events/:id", requireAuth, async (req, res, next) => {
   try {
     const event = await prisma.event.findUnique({
-      where: { id: req.params.id }
+      where: { id: req.params.id },
     });
 
     if (!event) {
       return res.status(404).json({
-        message: "Event not found."
+        message: "Event not found.",
       });
     }
 
     if (event.creatorId !== req.user.id) {
       return res.status(403).json({
-        message: "You can only edit your own events."
+        message: "You can only edit your own events.",
       });
     }
 
@@ -310,8 +364,8 @@ app.patch("/api/events/:id", requireAuth, async (req, res, next) => {
         ...data,
         ...(data.eventDate
           ? { eventDate: new Date(data.eventDate) }
-          : {})
-      }
+          : {}),
+      },
     });
 
     res.json(updatedEvent);
@@ -324,27 +378,27 @@ app.patch("/api/events/:id", requireAuth, async (req, res, next) => {
 app.delete("/api/events/:id", requireAuth, async (req, res, next) => {
   try {
     const event = await prisma.event.findUnique({
-      where: { id: req.params.id }
+      where: { id: req.params.id },
     });
 
     if (!event) {
       return res.status(404).json({
-        message: "Event not found."
+        message: "Event not found.",
       });
     }
 
     if (event.creatorId !== req.user.id) {
       return res.status(403).json({
-        message: "You can only delete your own events."
+        message: "You can only delete your own events.",
       });
     }
 
     await prisma.event.delete({
-      where: { id: event.id }
+      where: { id: event.id },
     });
 
     res.json({
-      message: "Event deleted successfully."
+      message: "Event deleted successfully.",
     });
   } catch (error) {
     next(error);
@@ -355,18 +409,18 @@ app.delete("/api/events/:id", requireAuth, async (req, res, next) => {
 app.post("/api/events/:id/join", requireAuth, async (req, res, next) => {
   try {
     const event = await prisma.event.findUnique({
-      where: { id: req.params.id }
+      where: { id: req.params.id },
     });
 
     if (!event) {
       return res.status(404).json({
-        message: "Event not found."
+        message: "Event not found.",
       });
     }
 
     if (event.eventDate <= new Date()) {
       return res.status(400).json({
-        message: "This event has already passed."
+        message: "This event has already passed.",
       });
     }
 
@@ -375,15 +429,15 @@ app.post("/api/events/:id/join", requireAuth, async (req, res, next) => {
         eventId: event.id,
         userId: req.user.id,
         userName: req.user.name,
-        userEmail: req.user.email
-      }
+        userEmail: req.user.email,
+      },
     });
 
     res.status(201).json(join);
   } catch (error) {
     if (error.code === "P2002") {
       return res.status(409).json({
-        message: "You already joined this event."
+        message: "You already joined this event.",
       });
     }
 
@@ -397,13 +451,17 @@ app.get("/api/joined-events", requireAuth, async (req, res, next) => {
     const joins = await prisma.eventJoin.findMany({
       where: { userId: req.user.id },
       include: { event: true },
-      orderBy: { joinedAt: "desc" }
+      orderBy: {
+        event: {
+          eventDate: "asc",
+        },
+      },
     });
 
     res.json(
       joins.map((join) => ({
         ...join.event,
-        joinedAt: join.joinedAt
+        joinedAt: join.joinedAt,
       }))
     );
   } catch (error) {
@@ -416,14 +474,14 @@ app.get("/api/joined-events", requireAuth, async (req, res, next) => {
 app.use((error, _req, res, _next) => {
   if (error instanceof z.ZodError) {
     return res.status(400).json({
-      message: error.issues[0]?.message || "Invalid input."
+      message: error.issues[0]?.message || "Invalid input.",
     });
   }
 
   console.error(error);
 
   res.status(500).json({
-    message: "Something went wrong. Please try again."
+    message: "Something went wrong. Please try again.",
   });
 });
 
