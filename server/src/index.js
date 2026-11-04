@@ -9,6 +9,8 @@ import { z } from "zod";
 import { prisma } from "./db.js";
 import { requireAuth } from "./middleware/auth.js";
 
+// ==================== APP CONFIGURATION ====================
+
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -18,7 +20,9 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is missing from server/.env");
 }
 
-const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:3000")
+const allowedOrigins = (
+  process.env.CLIENT_URL || "http://localhost:3000"
+)
   .split(",")
   .map((origin) => origin.trim());
 
@@ -31,28 +35,38 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 
-// ==================== VALIDATION ====================
+// ==================== VALIDATION SCHEMAS ====================
 
+// SIGNUP VALIDATION
 const signupSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: z.string().trim().email().max(150),
-  password: z.string().min(8).max(100),
+  password: z
+    .string()
+    .regex(/^\d{6}$/, "Password must be exactly 6 digits."),
 });
 
+// LOGIN VALIDATION
 const loginSchema = z.object({
   email: z.string().trim().email(),
-  password: z.string().min(1),
+  password: z
+    .string()
+    .regex(/^\d{6}$/, "Password must be exactly 6 digits."),
 });
 
+// PROFILE VALIDATION
 const profileSchema = z.object({
   name: z.string().trim().min(2).max(80),
-  image: z.union([
-    z.string().url().max(2000),
-    z.literal(""),
-    z.null(),
-  ]).optional(),
+  image: z
+    .union([
+      z.string().url().max(2000),
+      z.literal(""),
+      z.null(),
+    ])
+    .optional(),
 });
 
+// EVENT VALIDATION
 const eventSchema = z.object({
   title: z.string().trim().min(4).max(120),
   description: z.string().trim().min(20).max(4000),
@@ -67,7 +81,7 @@ const eventSchema = z.object({
   ),
 });
 
-// ==================== HEALTH ====================
+// ==================== HEALTH CHECK ====================
 
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -84,6 +98,7 @@ app.post("/api/auth/signup", async (req, res, next) => {
     const data = signupSchema.parse(req.body);
     const email = data.email.toLowerCase();
 
+    // Check existing account
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -94,8 +109,10 @@ app.post("/api/auth/signup", async (req, res, next) => {
       });
     }
 
+    // Hash password
     const passwordHash = await bcrypt.hash(data.password, 12);
 
+    // Create user
     const user = await prisma.user.create({
       data: {
         name: data.name,
@@ -111,6 +128,7 @@ app.post("/api/auth/signup", async (req, res, next) => {
       },
     });
 
+    // Generate JWT
     const token = jwt.sign(
       {
         id: user.id,
@@ -147,6 +165,7 @@ app.post("/api/auth/login", async (req, res, next) => {
       });
     }
 
+    // Compare password
     const passwordMatches = await bcrypt.compare(
       data.password,
       user.passwordHash
@@ -158,6 +177,7 @@ app.post("/api/auth/login", async (req, res, next) => {
       });
     }
 
+    // Generate JWT
     const token = jwt.sign(
       {
         id: user.id,
@@ -183,7 +203,8 @@ app.post("/api/auth/login", async (req, res, next) => {
   }
 });
 
-// CURRENT USER
+// ==================== CURRENT USER ====================
+
 app.get("/api/auth/me", requireAuth, async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
@@ -209,7 +230,8 @@ app.get("/api/auth/me", requireAuth, async (req, res, next) => {
   }
 });
 
-// UPDATE PROFILE
+// ==================== UPDATE PROFILE ====================
+
 app.patch("/api/auth/me", requireAuth, async (req, res, next) => {
   try {
     const data = profileSchema.parse(req.body);
@@ -253,7 +275,7 @@ app.patch("/api/auth/me", requireAuth, async (req, res, next) => {
 
 // ==================== EVENTS ====================
 
-// ALL UPCOMING EVENTS
+// GET ALL UPCOMING EVENTS
 app.get("/api/events", async (req, res, next) => {
   try {
     const requestedLimit = Number(req.query.limit);
@@ -276,7 +298,7 @@ app.get("/api/events", async (req, res, next) => {
   }
 });
 
-// SINGLE EVENT
+// GET SINGLE EVENT
 app.get("/api/events/:id", async (req, res, next) => {
   try {
     const event = await prisma.event.findUnique({
@@ -321,7 +343,7 @@ app.post("/api/events", requireAuth, async (req, res, next) => {
   }
 });
 
-// MY CREATED EVENTS
+// GET MY CREATED EVENTS
 app.get("/api/my-events", requireAuth, async (req, res, next) => {
   try {
     const events = await prisma.event.findMany({
@@ -405,7 +427,8 @@ app.delete("/api/events/:id", requireAuth, async (req, res, next) => {
   }
 });
 
-// JOIN EVENT
+// ==================== JOIN EVENT ====================
+
 app.post("/api/events/:id/join", requireAuth, async (req, res, next) => {
   try {
     const event = await prisma.event.findUnique({
@@ -445,7 +468,8 @@ app.post("/api/events/:id/join", requireAuth, async (req, res, next) => {
   }
 });
 
-// JOINED EVENTS
+// ==================== JOINED EVENTS ====================
+
 app.get("/api/joined-events", requireAuth, async (req, res, next) => {
   try {
     const joins = await prisma.eventJoin.findMany({
